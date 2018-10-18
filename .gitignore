@@ -1,0 +1,8 @@
+*.pyc
+A/
+B/
+trainA/
+trainB/
+testA/
+testB/
+
