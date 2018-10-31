@@ -55,6 +55,5 @@ def main():
 			print('Image id = ', image_id, ' does not exist')
 
 
-
 if __name__ == '__main__':
 	main()
