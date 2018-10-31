@@ -280,8 +280,5 @@ def main():
         pickle.dump(train_hist, f)
 
 
-
-
-
 if __name__ == '__main__':
     main()
