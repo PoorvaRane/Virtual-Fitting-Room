@@ -175,7 +175,7 @@ def training(args, epoch, device, dataloaders, networks, BCELoss, L1_loss, Gen_o
     return train_hist
 
 
-def testing(args, epoch, device, dataloaders, networks, BCELoss, L1_loss):
+def testing(args, epoch, device, dataloaders, networks):
     En_A, En_B, De_A, De_B, Disc_A, Disc_B = networks
     _, _, test_loader_A, test_loader_B = dataloaders
 
@@ -267,7 +267,7 @@ def main():
         # Train
         train_hist = training(args, epoch, device, dataloaders, networks, BCELoss, L1_loss, Gen_optimizer, Disc_A_optimizer, Disc_B_optimizer, train_hist)
         # Test
-        testing(args, epoch, device, dataloaders, networks, BCELoss, L1_loss)
+        testing(args, epoch, device, dataloaders, networks)
 
     print('====================================================================================================')
     total_time = time.time() - start_time
