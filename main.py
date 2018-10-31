@@ -5,80 +5,74 @@ import torch.optim as optim
 import matplotlib.pyplot as plt
 from torchvision import transforms
 
-parser = argparse.ArgumentParser()
-parser.add_argument('--dataset', default='dataset', help='dataset')
-parser.add_argument('--in_ngc', type=int, default=3, help='input channel for generator')
-parser.add_argument('--out_ngc', type=int, default=3, help='output channel for generator')
-parser.add_argument('--in_ndc', type=int, default=3, help='input channel for discriminator')
-parser.add_argument('--out_ndc', type=int, default=1, help='output channel for discriminator')
-parser.add_argument('--batch_size', type=int, default=64, help='batch size')
-parser.add_argument('--ngf', type=int, default=64)
-parser.add_argument('--ndf', type=int, default=64)
-parser.add_argument('--nb', type=int, default=8, help='the number of resnet block layers for generator')
-parser.add_argument('--img_size', type=int, default=64, help='input image size')
-parser.add_argument('--train_epoch', type=int, default=100)
-parser.add_argument('--lrD', type=float, default=0.0002, help='learning rate, default=0.0002')
-parser.add_argument('--lrG', type=float, default=0.0002, help='learning rate, default=0.0002')
-parser.add_argument('--beta1', type=float, default=0.5, help='beta1 for Adam optimizer')
-parser.add_argument('--beta2', type=float, default=0.999, help='beta2 for Adam optimizer')
-args = parser.parse_args()
 
-print('------------ Options -------------')
-for k, v in sorted(vars(args).items()):
-    print('%s: %s' % (str(k), str(v)))
-print('-------------- End ----------------')
+def parse_arguments():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--dataset', default='dataset', help='dataset')
+    parser.add_argument('--in_ngc', type=int, default=3, help='input channel for generator')
+    parser.add_argument('--out_ngc', type=int, default=3, help='output channel for generator')
+    parser.add_argument('--in_ndc', type=int, default=3, help='input channel for discriminator')
+    parser.add_argument('--out_ndc', type=int, default=1, help='output channel for discriminator')
+    parser.add_argument('--batch_size', type=int, default=64, help='batch size')
+    parser.add_argument('--ngf', type=int, default=64)
+    parser.add_argument('--ndf', type=int, default=64)
+    parser.add_argument('--nb', type=int, default=8, help='the number of resnet block layers for generator')
+    parser.add_argument('--img_size', type=int, default=64, help='input image size')
+    parser.add_argument('--train_epoch', type=int, default=100)
+    parser.add_argument('--lrD', type=float, default=0.0002, help='learning rate, default=0.0002')
+    parser.add_argument('--lrG', type=float, default=0.0002, help='learning rate, default=0.0002')
+    parser.add_argument('--beta1', type=float, default=0.5, help='beta1 for Adam optimizer')
+    parser.add_argument('--beta2', type=float, default=0.999, help='beta2 for Adam optimizer')
+    args = parser.parse_args()
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-if torch.backends.cudnn.enabled:
-    torch.backends.cudnn.benchmark = True
+    # Print args
+    print('------------ Options -------------')
+    for k, v in sorted(vars(args).items()):
+        print('%s: %s' % (str(k), str(v)))
+    print('-------------- End ----------------')
 
-# results save path
-if not os.path.isdir(os.path.join(args.dataset + '_results', 'img')):
-    os.makedirs(os.path.join(args.dataset + '_results', 'img'))
-if not os.path.isdir(os.path.join(args.dataset + '_results', 'model')):
-    os.makedirs(os.path.join(args.dataset + '_results', 'model'))
+    return args
 
-# data_loader
-transform = transforms.Compose([
-        transforms.Resize((args.img_size, args.img_size)),
-        transforms.ToTensor(),
-        transforms.Normalize(mean=(0.5, 0.5, 0.5), std=(0.5, 0.5, 0.5))
-])
-train_loader_A = utils.data_load(os.path.join('data', args.dataset), 'trainA', transform, args.batch_size, shuffle=True, drop_last=True)
-train_loader_B = utils.data_load(os.path.join('data', args.dataset), 'trainB', transform, args.batch_size, shuffle=True, drop_last=True)
-test_loader_A = utils.data_load(os.path.join('data', args.dataset), 'testA', transform, 1, shuffle=True, drop_last=True)
-test_loader_B = utils.data_load(os.path.join('data', args.dataset), 'testB', transform, 1, shuffle=True, drop_last=True)
 
-# network
-En_A = networks.encoder(in_nc=args.in_ngc, nf=args.ngf, img_size=args.img_size).to(device)
-En_B = networks.encoder(in_nc=args.in_ngc, nf=args.ngf, img_size=args.img_size).to(device)
-De_A = networks.decoder(out_nc=args.out_ngc, nf=args.ngf).to(device)
-De_B = networks.decoder(out_nc=args.out_ngc, nf=args.ngf).to(device)
-Disc_A = networks.discriminator(in_nc=args.in_ndc, out_nc=args.out_ndc, nf=args.ndf, img_size=args.img_size).to(device)
-Disc_B = networks.discriminator(in_nc=args.in_ndc, out_nc=args.out_ndc, nf=args.ndf, img_size=args.img_size).to(device)
-En_A.train()
-En_B.train()
-De_A.train()
-De_B.train()
-Disc_A.train()
-Disc_B.train()
-print('---------- Networks initialized -------------')
-utils.print_network(En_A)
-utils.print_network(En_B)
-utils.print_network(De_A)
-utils.print_network(De_B)
-utils.print_network(Disc_A)
-utils.print_network(Disc_B)
-print('-----------------------------------------------')
+def dataloader_objects(args):
+    # data_loader
+    transform = transforms.Compose([
+            transforms.Resize((args.img_size, args.img_size)),
+            transforms.ToTensor(),
+            transforms.Normalize(mean=(0.5, 0.5, 0.5), std=(0.5, 0.5, 0.5))
+    ])
+    train_loader_A = utils.data_load(os.path.join('data', args.dataset), 'trainA', transform, args.batch_size, shuffle=True, drop_last=True)
+    train_loader_B = utils.data_load(os.path.join('data', args.dataset), 'trainB', transform, args.batch_size, shuffle=True, drop_last=True)
+    test_loader_A = utils.data_load(os.path.join('data', args.dataset), 'testA', transform, 1, shuffle=True, drop_last=True)
+    test_loader_B = utils.data_load(os.path.join('data', args.dataset), 'testB', transform, 1, shuffle=True, drop_last=True)
 
-# loss
-BCE_loss = nn.BCELoss().to(device)
-L1_loss = nn.L1Loss().to(device)
+    dataloaders = [train_loader_A, train_loader_B, test_loader_A, test_loader_B]
+    return dataloaders
 
-# Adam optimizer
-Gen_optimizer = optim.Adam(itertools.chain(En_A.parameters(), De_A.parameters(), En_B.parameters(), De_B.parameters()), lr=args.lrG, betas=(args.beta1, args.beta2))
-Disc_A_optimizer = optim.Adam(Disc_A.parameters(), lr=args.lrD, betas=(args.beta1, args.beta2))
-Disc_B_optimizer = optim.Adam(Disc_B.parameters(), lr=args.lrD, betas=(args.beta1, args.beta2))
+
+def initialize_networks(args, device):
+    # network
+    En_A = networks.encoder(in_nc=args.in_ngc, nf=args.ngf, img_size=args.img_size).to(device)
+    En_B = networks.encoder(in_nc=args.in_ngc, nf=args.ngf, img_size=args.img_size).to(device)
+    De_A = networks.decoder(out_nc=args.out_ngc, nf=args.ngf).to(device)
+    De_B = networks.decoder(out_nc=args.out_ngc, nf=args.ngf).to(device)
+    Disc_A = networks.discriminator(in_nc=args.in_ndc, out_nc=args.out_ndc, nf=args.ndf, img_size=args.img_size).to(device)
+    Disc_B = networks.discriminator(in_nc=args.in_ndc, out_nc=args.out_ndc, nf=args.ndf, img_size=args.img_size).to(device)
+
+    print('---------- Networks initialized -------------')
+    utils.print_network(En_A)
+    utils.print_network(En_B)
+    utils.print_network(De_A)
+    utils.print_network(De_B)
+    utils.print_network(Disc_A)
+    utils.print_network(Disc_B)
+    print('-----------------------------------------------')
+
+    networks = [En_A, En_B, De_A, De_B, Disc_A, Disc_B]
+    return networks
+
+
+
 
 train_hist = {}
 train_hist['Disc_A_loss'] = []
@@ -226,3 +220,40 @@ print("Training finish!... save training results")
 with open(os.path.join(args.dataset + '_results',  'train_hist.pkl'), 'wb') as f:
     pickle.dump(train_hist, f)
 
+
+def main():
+    args = parse_arguments()
+
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    if torch.backends.cudnn.enabled:
+        torch.backends.cudnn.benchmark = True
+
+    # results save path
+    if not os.path.isdir(os.path.join(args.dataset + '_results', 'img')):
+        os.makedirs(os.path.join(args.dataset + '_results', 'img'))
+    if not os.path.isdir(os.path.join(args.dataset + '_results', 'model')):
+        os.makedirs(os.path.join(args.dataset + '_results', 'model'))
+
+    # Get train and test dataloader objects
+    dataloaders = dataloader_objects(args)
+
+    # initialize networks
+    networks = initialize_networks(args, device)
+    En_A, En_B, De_A, De_B, Disc_A, Disc_B = networks
+
+
+    # loss
+    BCE_loss = nn.BCELoss().to(device)
+    L1_loss = nn.L1Loss().to(device)
+
+    # Adam optimizer
+    Gen_optimizer = optim.Adam(itertools.chain(En_A.parameters(), De_A.parameters(), En_B.parameters(), De_B.parameters()), lr=args.lrG, betas=(args.beta1, args.beta2))
+    Disc_A_optimizer = optim.Adam(Disc_A.parameters(), lr=args.lrD, betas=(args.beta1, args.beta2))
+    Disc_B_optimizer = optim.Adam(Disc_B.parameters(), lr=args.lrD, betas=(args.beta1, args.beta2))
+
+
+
+
+
+if __name__ == '__main__':
+    main()
