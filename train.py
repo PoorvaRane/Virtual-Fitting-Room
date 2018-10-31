@@ -142,17 +142,7 @@ for epoch in range(args.train_epoch):
         Disc_B_losses.append(Disc_B_loss.item())
 
         # train Gen
-        # Gen adversarial loss
-        in_A, sp_A = En_A(A)
-        in_B, sp_B = En_B(B)
-
-        B2A = De_A(in_B + sp_A)
-        A2B = De_B(in_A + sp_B)
-
-        Dist_A_fake = Disc_A(B2A)
         Gen_A_fake_loss = BCE_loss(Disc_A_fake, real)
-
-        Disc_B_fake = Disc_B(A2B)
         Gen_B_fake_loss = BCE_loss(Disc_B_fake, real)
 
         # Gen Dual loss
