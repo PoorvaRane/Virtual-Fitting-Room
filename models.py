@@ -28,9 +28,9 @@ class encoder(nn.Module):
             nn.Conv2d(in_channels=nf * 4, out_channels=nf * 8, kernel_size=4, stride=2, padding=1),
         )
         self.specific_feature = nn.Sequential(
-            nn.Linear((nf * 4) * (img_size // 8) * (img_size // 8), nf * 8),
+            nn.Linear(in_features=(nf * 4) * (img_size // 8) * (img_size // 8), out_features=nf * 8),
             nn.LeakyReLU(0.2, inplace=True),
-            nn.Linear(nf * 8, nf * 8),
+            nn.Linear(in_features=nf * 8, out_features=nf * 8),
         )
 
         utils.initialize_weights(self)
@@ -118,9 +118,9 @@ class discriminator(nn.Module):
         )
 
         self.fc = nn.Sequential(
-            nn.Linear((nf * 8) * (img_size // 16) * (img_size // 16), nf * 8),
+            nn.Linear(in_features=(nf * 8) * (img_size // 16) * (img_size // 16), out_features=nf * 8),
             nn.LeakyReLU(0.2, inplace=True),
-            nn.Linear(nf * 8, out_nc),
+            nn.Linear(in_features=nf * 8, out_features=out_nc),
             nn.Sigmoid(),
         )
 
