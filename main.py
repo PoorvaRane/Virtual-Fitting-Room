@@ -18,7 +18,7 @@ def parse_arguments():
     parser.add_argument('--ndf', type=int, default=64)
     parser.add_argument('--nb', type=int, default=8, help='the number of resnet block layers for generator')
     parser.add_argument('--img_size', type=int, default=64, help='input image size')
-    parser.add_argument('--train_epoch', type=int, default=100)
+    parser.add_argument('--num_epoch', type=int, default=100)
     parser.add_argument('--lrD', type=float, default=0.0002, help='learning rate, default=0.0002')
     parser.add_argument('--lrG', type=float, default=0.0002, help='learning rate, default=0.0002')
     parser.add_argument('--beta1', type=float, default=0.5, help='beta1 for Adam optimizer')
@@ -72,28 +72,33 @@ def initialize_networks(args, device):
     return networks
 
 
+def setup():
+    train_hist = {}
+    train_hist['Disc_A_loss'] = []
+    train_hist['Disc_B_loss'] = []
+    train_hist['Gen_loss'] = []
+    train_hist['per_epoch_time'] = []
+    train_hist['total_time'] = []
+
+    print('Setup complete!')
+    return train_hist
 
 
-train_hist = {}
-train_hist['Disc_A_loss'] = []
-train_hist['Disc_B_loss'] = []
-train_hist['Gen_loss'] = []
-train_hist['per_epoch_time'] = []
-train_hist['total_time'] = []
-print('training start!')
-start_time = time.time()
-real = torch.ones(args.batch_size, 1, 1, 1).to(device)
-fake = torch.zeros(args.batch_size, 1, 1, 1).to(device)
-for epoch in range(args.train_epoch):
-    epoch_start_time = time.time()
+def training(args, epoch, device, dataloaders, networks, BCELoss, L1_loss, Gen_optimizer, Disc_A_optimizer, Disc_B_optimizer, train_hist):
+    En_A, En_B, De_A, De_B, Disc_A, Disc_B = networks
+    train_loader_A, train_loader_B, _, _ = dataloaders
+
     En_A.train()
     En_B.train()
     De_A.train()
     De_B.train()
+    Disc_A.train()
+    Disc_B.train()
+    
     Disc_A_losses = []
     Disc_B_losses = []
     Gen_losses = []
-    iter = 0
+
     for (A, _), (B, _) in zip(train_loader_A, train_loader_B):
         A, B = A.to(device), B.to(device)
 
@@ -135,11 +140,11 @@ for epoch in range(args.train_epoch):
         Disc_A_losses.append(Disc_A_loss.item())
         Disc_B_losses.append(Disc_B_loss.item())
 
-        # train Gen
+        # train Generator
         Gen_A_fake_loss = BCE_loss(Disc_A_fake, real)
         Gen_B_fake_loss = BCE_loss(Disc_B_fake, real)
 
-        # Gen Dual loss
+        # Generator Dual loss
         in_A_hat, sp_B_hat = En_B(A2B)
         in_B_hat, sp_A_hat = En_A(B2A)
 
@@ -147,9 +152,9 @@ for epoch in range(args.train_epoch):
         B_hat = De_B(in_B_hat + sp_B)
 
         Gen_gan_loss = Gen_A_fake_loss + Gen_B_fake_loss
-        Gen_dual_loss = L1_loss(A_hat, A.detach()) ** 2 + L1_loss(B_hat, B.detach()) ** 2
-        Gen_in_loss = L1_loss(in_A_hat, in_A.detach()) ** 2 + L1_loss(in_B_hat, in_B.detach()) ** 2
-        Gen_sp_loss = L1_loss(sp_A_hat, sp_A.detach()) ** 2 + L1_loss(sp_B_hat, sp_B.detach()) ** 2
+        Gen_dual_loss = (L1_loss(A_hat, A.detach()) ** 2 )+ (L1_loss(B_hat, B.detach()) ** 2)
+        Gen_in_loss = (L1_loss(in_A_hat, in_A.detach()) ** 2) + (L1_loss(in_B_hat, in_B.detach()) ** 2)
+        Gen_sp_loss = (L1_loss(sp_A_hat, sp_A.detach()) ** 2) + (L1_loss(sp_B_hat, sp_B.detach()) ** 2)
 
         Gen_loss = Gen_A_fake_loss + Gen_B_fake_loss + Gen_dual_loss + Gen_in_loss + Gen_sp_loss
 
@@ -160,35 +165,41 @@ for epoch in range(args.train_epoch):
         train_hist['Gen_loss'].append(Gen_loss.item())
         Gen_losses.append(Gen_loss.item())
 
-        iter += 1
-
     per_epoch_time = time.time() - epoch_start_time
     train_hist['per_epoch_time'].append(per_epoch_time)
     print(
-        '[%d/%d] - time: %.2f, Disc A loss: %.3f, Disc B loss: %.3f, Gen loss: %.3f' % (
-            (epoch + 1), args.train_epoch, per_epoch_time, torch.mean(torch.FloatTensor(Disc_A_losses)),
+        '[%d/%d] - time: %f, Disc A loss: %f, Disc B loss: %f, Gen loss: %f' % (
+            (epoch + 1), args.num_epoch, per_epoch_time, torch.mean(torch.FloatTensor(Disc_A_losses)),
             torch.mean(torch.FloatTensor(Disc_B_losses)), torch.mean(torch.FloatTensor(Gen_losses)),))
 
+    return train_hist
 
-    with torch.no_grad():
-        En_A.eval()
-        En_B.eval()
-        De_A.eval()
-        De_B.eval()
-        n = 0
-        for (A, _), (B, _) in zip(test_loader_A, test_loader_B):
-            A, B = A.to(device), B.to(device)
 
-            in_A, sp_A = En_A(A)
-            in_B, sp_B = En_B(B)
+def testing(args, epoch, device, dataloaders, networks, BCELoss, L1_loss):
+    En_A, En_B, De_A, De_B, Disc_A, Disc_B = networks
+    _, _, test_loader_A, test_loader_B = dataloaders
 
-            B2A = De_A(in_B + sp_A)
-            A2B = De_B(in_A + sp_B)
+    En_A.eval()
+    En_B.eval()
+    De_A.eval()
+    De_B.eval()
+    Disc_A.eval()
+    Disc_B.eval()
+    n = 0
 
-            result = torch.cat((A[0], B[0], A2B[0], B2A[0]), 2)
-            path = os.path.join(args.dataset + '_results', 'img', str(epoch+1) + '_epoch_' + args.dataset + '_' + str(n + 1) + '.png')
-            plt.imsave(path, (result.cpu().numpy().transpose(1, 2, 0) + 1) / 2)
-            n += 1
+    for (A, _), (B, _) in zip(test_loader_A, test_loader_B):
+        A, B = A.to(device), B.to(device)
+
+        in_A, sp_A = En_A(A)
+        in_B, sp_B = En_B(B)
+
+        B2A = De_A(in_B + sp_A)
+        A2B = De_B(in_A + sp_B)
+
+        result = torch.cat((A[0], B[0], A2B[0], B2A[0]), 2)
+        path = os.path.join(args.dataset + '_results', 'img', str(epoch+1) + '_epoch_' + args.dataset + '_' + str(n + 1) + '.png')
+        plt.imsave(path, (result.cpu().numpy().transpose(1, 2, 0) + 1) / 2)
+        n += 1
 
         torch.save(En_A.state_dict(), os.path.join(args.dataset + '_results', 'model', 'En_A_param_latest.pkl'))
         torch.save(En_B.state_dict(), os.path.join(args.dataset + '_results', 'model', 'En_B_param_latest.pkl'))
@@ -196,7 +207,6 @@ for epoch in range(args.train_epoch):
         torch.save(De_B.state_dict(), os.path.join(args.dataset + '_results', 'model', 'De_B_param_latest.pkl'))
         torch.save(Disc_A.state_dict(), os.path.join(args.dataset + '_results', 'model', 'Disc_A_param_latest.pkl'))
         torch.save(Disc_B.state_dict(), os.path.join(args.dataset + '_results', 'model', 'Disc_B_param_latest.pkl'))
-
 
         if (epoch+1) % 50 == 0:
             torch.save(En_A.state_dict(),
@@ -211,14 +221,6 @@ for epoch in range(args.train_epoch):
                        os.path.join(args.dataset + '_results', 'model', 'Disc_A_param_' + str(epoch+1) + '.pkl'))
             torch.save(Disc_B.state_dict(),
                        os.path.join(args.dataset + '_results', 'model', 'Disc_B_param_' + str(epoch+1) + '.pkl'))
-
-total_time = time.time() - start_time
-train_hist['total_time'].append(total_time)
-
-print("Avg one epoch time: %.2f, total %d epochs time: %.2f" % (torch.mean(torch.FloatTensor(train_hist['per_epoch_time'])), args.train_epoch, total_time))
-print("Training finish!... save training results")
-with open(os.path.join(args.dataset + '_results',  'train_hist.pkl'), 'wb') as f:
-    pickle.dump(train_hist, f)
 
 
 def main():
@@ -241,7 +243,6 @@ def main():
     networks = initialize_networks(args, device)
     En_A, En_B, De_A, De_B, Disc_A, Disc_B = networks
 
-
     # loss
     BCE_loss = nn.BCELoss().to(device)
     L1_loss = nn.L1Loss().to(device)
@@ -250,6 +251,33 @@ def main():
     Gen_optimizer = optim.Adam(itertools.chain(En_A.parameters(), De_A.parameters(), En_B.parameters(), De_B.parameters()), lr=args.lrG, betas=(args.beta1, args.beta2))
     Disc_A_optimizer = optim.Adam(Disc_A.parameters(), lr=args.lrD, betas=(args.beta1, args.beta2))
     Disc_B_optimizer = optim.Adam(Disc_B.parameters(), lr=args.lrD, betas=(args.beta1, args.beta2))
+
+    # Begin model training
+    train_hist = setup()
+
+    start_time = time.time()
+    real = torch.ones(args.batch_size, 1, 1, 1).to(device)
+    fake = torch.zeros(args.batch_size, 1, 1, 1).to(device)
+
+    for epoch in range(args.num_epoch):
+        print('====================================================================================================')
+        print("Epoch = ", epoch)
+        epoch_start_time = time.time()
+
+        # Train
+        train_hist = training(args, epoch, device, dataloaders, networks, BCELoss, L1_loss, Gen_optimizer, Disc_A_optimizer, Disc_B_optimizer, train_hist)
+        # Test
+        testing(args, epoch, device, dataloaders, networks, BCELoss, L1_loss)
+
+    print('====================================================================================================')
+    total_time = time.time() - start_time
+    train_hist['total_time'].append(total_time)
+
+    print("Avg one epoch time: %.2f, total %d epochs time: %.2f" % (torch.mean(torch.FloatTensor(train_hist['per_epoch_time'])), args.num_epoch, total_time))
+
+    print("Training Completed!")
+    with open(os.path.join(args.dataset + '_results',  'train_hist.pkl'), 'wb') as f:
+        pickle.dump(train_hist, f)
 
 
 
