@@ -68,8 +68,8 @@ def initialize_networks(args, device):
     utils.print_network(Disc_B)
     print('-----------------------------------------------')
 
-    networks = [En_A, En_B, De_A, De_B, Disc_A, Disc_B]
-    return networks
+    all_networks = [En_A, En_B, De_A, De_B, Disc_A, Disc_B]
+    return all_networks
 
 
 def setup():
@@ -84,8 +84,8 @@ def setup():
     return train_hist
 
 
-def training(args, epoch, device, dataloaders, networks, BCE_loss, L1_loss, Gen_optimizer, Disc_A_optimizer, Disc_B_optimizer, train_hist):
-    En_A, En_B, De_A, De_B, Disc_A, Disc_B = networks
+def training(args, epoch, device, dataloaders, all_networks, BCE_loss, L1_loss, Gen_optimizer, Disc_A_optimizer, Disc_B_optimizer, train_hist):
+    En_A, En_B, De_A, De_B, Disc_A, Disc_B = all_networks
     train_loader_A, train_loader_B, _, _ = dataloaders
 
     En_A.train()
@@ -178,8 +178,8 @@ def training(args, epoch, device, dataloaders, networks, BCE_loss, L1_loss, Gen_
     return train_hist
 
 
-def testing(args, epoch, device, dataloaders, networks):
-    En_A, En_B, De_A, De_B, Disc_A, Disc_B = networks
+def testing(args, epoch, device, dataloaders, all_networks):
+    En_A, En_B, De_A, De_B, Disc_A, Disc_B = all_networks
     _, _, test_loader_A, test_loader_B = dataloaders
 
     En_A.eval()
@@ -243,8 +243,8 @@ def main():
     dataloaders = dataloader_objects(args)
 
     # initialize networks
-    networks = initialize_networks(args, device)
-    En_A, En_B, De_A, De_B, Disc_A, Disc_B = networks
+    all_networks = initialize_networks(args, device)
+    En_A, En_B, De_A, De_B, Disc_A, Disc_B = all_networks
 
     # loss
     BCE_loss = nn.BCELoss().to(device)
@@ -268,9 +268,9 @@ def main():
         epoch_start_time = time.time()
 
         # Train
-        train_hist = training(args, epoch, device, dataloaders, networks, BCE_loss, L1_loss, Gen_optimizer, Disc_A_optimizer, Disc_B_optimizer, train_hist)
+        train_hist = training(args, epoch, device, dataloaders, all_networks, BCE_loss, L1_loss, Gen_optimizer, Disc_A_optimizer, Disc_B_optimizer, train_hist)
         # Test
-        testing(args, epoch, device, dataloaders, networks)
+        testing(args, epoch, device, dataloaders, all_networks)
 
     print('====================================================================================================')
     total_time = time.time() - start_time
