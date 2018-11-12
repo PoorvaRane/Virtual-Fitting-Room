@@ -84,7 +84,7 @@ def setup():
     return train_hist
 
 
-def training(args, epoch, device, dataloaders, networks, BCELoss, L1_loss, Gen_optimizer, Disc_A_optimizer, Disc_B_optimizer, train_hist):
+def training(args, epoch, device, dataloaders, networks, BCE_loss, L1_loss, Gen_optimizer, Disc_A_optimizer, Disc_B_optimizer, train_hist):
     En_A, En_B, De_A, De_B, Disc_A, Disc_B = networks
     train_loader_A, train_loader_B, _, _ = dataloaders
 
@@ -94,6 +94,9 @@ def training(args, epoch, device, dataloaders, networks, BCELoss, L1_loss, Gen_o
     De_B.train()
     Disc_A.train()
     Disc_B.train()
+
+    real = torch.ones(args.batch_size, 1, 1, 1).to(device)
+    fake = torch.zeros(args.batch_size, 1, 1, 1).to(device)
     
     Disc_A_losses = []
     Disc_B_losses = []
@@ -265,7 +268,7 @@ def main():
         epoch_start_time = time.time()
 
         # Train
-        train_hist = training(args, epoch, device, dataloaders, networks, BCELoss, L1_loss, Gen_optimizer, Disc_A_optimizer, Disc_B_optimizer, train_hist)
+        train_hist = training(args, epoch, device, dataloaders, networks, BCE_loss, L1_loss, Gen_optimizer, Disc_A_optimizer, Disc_B_optimizer, train_hist)
         # Test
         testing(args, epoch, device, dataloaders, networks)
 
