@@ -5,7 +5,7 @@ def main():
 	"""
 	Download the CelebA dataset from http://mmlab.ie.cuhk.edu.hk/projects/CelebA.html and 
 	run this file to split the dataset into two domains, A and B. Further spilt into 
-	trainA, trainB, testA, testB
+	trainA, trainB, testA, testB according to the split mentioned in the paper
 	"""
 
 	dataset_folder = '/data1/prane/CelebA/Img/img_align_celeba'

@@ -102,6 +102,8 @@ def training(args, epoch, device, dataloaders, all_networks, BCE_loss, L1_loss, 
     Disc_B_losses = []
     Gen_losses = []
 
+    epoch_start_time = time.time()
+
     for (A, _), (B, _) in zip(train_loader_A, train_loader_B):
         A, B = A.to(device), B.to(device)
 
