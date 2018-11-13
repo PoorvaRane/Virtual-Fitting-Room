@@ -203,7 +203,7 @@ def testing(args, epoch, device, dataloaders, all_networks):
 
         result = torch.cat((A[0], B[0], A2B[0], B2A[0]), 2)
         path = os.path.join(args.dataset + '_results', 'img', str(epoch+1) + '_epoch_' + args.dataset + '_' + str(n + 1) + '.png')
-        plt.imsave(path, (result.detach().numpy().transpose(1, 2, 0) + 1) / 2)
+        plt.imsave(path, (result.detach().cpu().numpy().transpose(1, 2, 0) + 1) / 2)
         n += 1
 
         torch.save(En_A.state_dict(), os.path.join(args.dataset + '_results', 'model', 'En_A_param_latest.pkl'))
