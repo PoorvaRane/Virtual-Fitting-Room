@@ -1,9 +1,3 @@
 *.pyc
-A/
-B/
-trainA/
-trainB/
-testA/
-testB/
 dataset_results/
-
+dataset/

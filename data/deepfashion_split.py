@@ -1,7 +1,8 @@
 import os
 import shutil
 from PIL import Image
-
+import cv2
+import numpy as np
 
 def create_domain_imgs(data_dir, dir_list):
 	front = []
