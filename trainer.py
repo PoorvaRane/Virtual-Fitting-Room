@@ -9,6 +9,7 @@ from PIL import Image
 import os
 import pdb
 from torch.nn.init import xavier_uniform_
+import numpy as np
 
 
 def parse_arguments():
