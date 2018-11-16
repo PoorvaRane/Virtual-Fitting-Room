@@ -36,100 +36,31 @@ def parse_arguments():
 
 # Create Dataset
 class ClothingDataset(Dataset):
-    def __init__(self, image_size, split):
-        self.clothing_dataset = self._create_dataset(image_size, split)
-        self.patches, self.labels = self.tcga_dataset
-        self.label_mask = self._create_label_mask()
+    def __init__(self, image_size, domain, mode):
+        self.mode = mode
+        self.image_array = self._create_dataset(image_size, domain, mode)
         self.transform = transforms.Compose([
-            transforms.Resize(image_size),
+            transforms.Resize((image_size, image_size)),
             transforms.ToTensor(),
             transforms.Normalize((.5, .5, .5), (.5, .5, .5))
         ])
-#         self.save_images()
         
-    def _create_dataset(self, image_size, split):
-        data_dir = '../dataset/patch_data'
-        if self.split == 'train':
-            data_dir = os.path.join(data_dir, 'train')
-        else:
-            data_dir = os.path.join(data_dir, 'dev')
+    def _create_dataset(self, image_size, domain, mode):
+        data_dir = './dataset/'
+        data_path = os.path.join(data_dir, domain + '_' + mode + '.npy')
+        data = np.load(data_path)
             
-        all_files = ['5.npz', '6.npz', '7.npz', '8.npz', '9.npz', '10.npz'] #os.listdir(data_dir)
-        images = []
-        labels = []
-        
-        # Iterate over all files
-        for file in all_files:
-            if '.npz' not in file:
-                continue
-            file_path = os.path.join(data_dir, file)
-            data = np.load(file_path)
-            X = data['arr_0']
-            y = data['arr_1']
-            images.append(X)
-            labels.append(y)
-            
-        images = np.concatenate(images)
-        labels = np.concatenate(labels)
-        labels = np.asarray([1 if x in [330.0,331.0] else 0 for x in labels])
-        
-        # Balance dataset
-        cancer = np.count_nonzero(labels)
-        noncancer = (labels.shape[0]-cancer)
-        minimum = min(cancer,noncancer)
-        sample_idxs_cancer = random.sample(list(np.where(labels == 1)[0]), minimum)
-        sample_idxs_nocancer = random.sample(list(np.where(labels == 0)[0]), minimum)
-        
-        new_idxs = []
-        new_idxs.extend(sample_idxs_cancer)
-        new_idxs.extend(sample_idxs_nocancer)
-        random.shuffle(new_idxs)
-        images = images[new_idxs]
-        labels = labels[new_idxs]
-        
-        return images, labels
-    
-    def save_images(self):
-        images = self.patches
-        folder = 'tcga_check/'
-        os.makedirs(folder, exist_ok=True)
-        for i in range(batch_size):
-            image = images[i]
-            im = Image.fromarray(image)
-            im.save(folder + str(i) + '.jpg', format='JPEG')
-        
-    def _one_hot(self, y):
-        label = y
-        label_onehot = np.zeros(num_classes + 1)
-        label_onehot[label] = 1
-        return label_onehot
-    
-    def _create_label_mask(self):
-        if self.split == 'train':
-            l = len(self.labels)
-            label_mask = np.zeros(l)
-            masked_len = int(labeled_rate * l)
-            label_mask[0:masked_len] = 1
-            np.random.shuffle(label_mask)
-            label_mask = torch.LongTensor(label_mask)
-            if torch.cuda.is_available(): 
-                label_mask = label_mask.cuda()
-            return label_mask
-        return None
+        return data
 
     def __getitem__(self, idx):
-        data, label = self.patches[idx], self.labels[idx]
-        label_onehot = self._one_hot(label)
-        if self.split == 'train':
-            return self.transform(Image.fromarray(data)), label, label_onehot, self.label_mask[idx]
-        return self.transform(Image.fromarray(data)), label
+        img = self.image_array[idx]
+        return self.transform(Image.fromarray(img))
 
     def __len__(self):
-        return len(self.labels)
+        return len(self.image_array)
 
 
 def dataloader_objects(args):
-    # data_loader
     transform = transforms.Compose([
             transforms.Resize((args.img_size, args.img_size)),
             transforms.ToTensor(),

@@ -66,11 +66,9 @@ def main():
 	A_image_lists = create_domain_imgs(data_dir, A_dir_list)
 	B_image_lists = create_domain_imgs(data_dir, B_dir_list)
 
-	# # Save as npz
-	# save_dataset(A_image_lists, 'A')
-	# save_dataset(B_image_lists, 'B')
-
-	# Load npz and create required dataset
+	# Save as npz
+	save_dataset(A_image_lists, 'A')
+	save_dataset(B_image_lists, 'B')
 
 if __name__ == '__main__':
 	main()
