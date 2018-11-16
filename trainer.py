@@ -10,6 +10,7 @@ import os
 import pdb
 from torch.nn.init import xavier_uniform_
 import numpy as np
+from torchvision.utils import save_image
 
 
 def parse_arguments():
@@ -223,6 +224,11 @@ def training(args, epoch, device, dataloaders, all_networks, BCE_loss, L1_loss, 
         '[%d/%d] - time: %f, Disc A loss: %f, Disc B loss: %f, Gen loss: %f' % (
             (epoch + 1), args.num_epoch, per_epoch_time, torch.mean(torch.FloatTensor(Disc_A_losses)),
             torch.mean(torch.FloatTensor(Disc_B_losses)), torch.mean(torch.FloatTensor(Gen_losses)),))
+
+    # Save Images
+    imgs_save = [A, B, A2B, B2A]
+    image_dir = os.path.join(args.dataset + '_results', 'img')
+    save_image(imgs_save, image_dir + '/epoch_%d_batch_%d.png' % (epoch, i), nrow=2, normalize=True)
 
     return train_hist
 
