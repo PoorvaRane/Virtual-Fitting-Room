@@ -52,7 +52,7 @@ class ClothingDataset(Dataset):
         ])
         
     def _create_dataset(self, image_size, domain, mode):
-        data_dir = './dataset/'
+        data_dir = './data/dataset/'
         data_path = os.path.join(data_dir, domain + '_' + mode + '.npy')
         data = np.load(data_path)
             
@@ -79,7 +79,7 @@ def dataloader_objects(args):
     A_back_loader = DataLoader(dataset=A_back, batch_size=args.batch_size, shuffle=True)
     A_side_loader = DataLoader(dataset=A_side, batch_size=args.batch_size, shuffle=True)
 
-    B_front_loader = DataLoader(dataset=ABfront, batch_size=args.batch_size, shuffle=True)
+    B_front_loader = DataLoader(dataset=B_front, batch_size=args.batch_size, shuffle=True)
     B_back_loader = DataLoader(dataset=B_back, batch_size=args.batch_size, shuffle=True)
     B_side_loader = DataLoader(dataset=B_side, batch_size=args.batch_size, shuffle=True)
 
@@ -144,7 +144,7 @@ def training(args, epoch, device, dataloaders, all_networks, BCE_loss, L1_loss, 
 
     for A_front, B_front in zip(A_front_loader, B_front_loader):
 
-        A, B = A.to(device), B.to(device)
+        A, B = A_front.to(device), B_front.to(device)
 
         # train Disc_A & Disc_B
         # Disc real loss
