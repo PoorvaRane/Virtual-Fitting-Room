@@ -43,11 +43,15 @@ def create_domain_imgs(data_dir, dir_list):
 
 def save_dataset(image_lists, domain):
 	front, back, side = image_lists
-	output_dir = './dataset/'
-	output_path = os.path.join(output_dir, domain)
+	dataset_dir = './dataset/'
+	output_path = os.path.join(dataset_dir, domain)
 
 	np.savez(output_path + '.npz', front = front, back=back, side=side)
-	print("Saved as npz file")
+	np.save(output_path + '_front.npy', front)
+	np.save(output_path + '_back.npy', back)
+	np.save(output_path + '_side.npy', side)
+
+	print("Saved dataset")
 
 
 def main():
@@ -62,9 +66,11 @@ def main():
 	A_image_lists = create_domain_imgs(data_dir, A_dir_list)
 	B_image_lists = create_domain_imgs(data_dir, B_dir_list)
 
-	# Save as datasets
-	save_dataset(A_image_lists, 'A')
-	save_dataset(B_image_lists, 'B')
+	# # Save as npz
+	# save_dataset(A_image_lists, 'A')
+	# save_dataset(B_image_lists, 'B')
+
+	# Load npz and create required dataset
 
 if __name__ == '__main__':
 	main()

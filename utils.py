@@ -37,3 +37,4 @@ def initialize_weights(net):
         elif isinstance(m, nn.BatchNorm2d):
             m.weight.data.fill_(1)
             m.bias.data.zero_()
+
