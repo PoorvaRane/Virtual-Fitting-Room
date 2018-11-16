@@ -61,11 +61,14 @@ class ClothingDataset(Dataset):
 
 
 def dataloader_objects(args):
-    transform = transforms.Compose([
-            transforms.Resize((args.img_size, args.img_size)),
-            transforms.ToTensor(),
-            transforms.Normalize(mean=(0.5, 0.5, 0.5), std=(0.5, 0.5, 0.5))
-    ])
+
+    A_front = ClothingDataset(args.img_size, 'A', 'front')
+    A_back = ClothingDataset(args.img_size, 'A', 'back')
+    A_side = ClothingDataset(args.img_size, 'A', 'side')
+    B_front = ClothingDataset(args.img_size, 'B', 'front')
+    B_back = ClothingDataset(args.img_size, 'B', 'back')
+    B_side = ClothingDataset(args.img_size, 'B', 'side')
+
     train_loader_A = utils.data_load(os.path.join('data', args.dataset), 'trainA', transform, args.batch_size, shuffle=True, drop_last=True)
     train_loader_B = utils.data_load(os.path.join('data', args.dataset), 'trainB', transform, args.batch_size, shuffle=True, drop_last=True)
     test_loader_A = utils.data_load(os.path.join('data', args.dataset), 'testA', transform, 1, shuffle=True, drop_last=True)
