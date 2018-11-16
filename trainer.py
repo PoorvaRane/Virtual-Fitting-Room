@@ -294,8 +294,6 @@ def main():
     train_hist = setup()
 
     start_time = time.time()
-    real = torch.ones(args.batch_size, 1, 1, 1).to(device)
-    fake = torch.zeros(args.batch_size, 1, 1, 1).to(device)
 
     for epoch in range(args.num_epoch):
         print('====================================================================================================')
@@ -304,8 +302,8 @@ def main():
 
         # Train
         train_hist = training(args, epoch, device, dataloaders, all_networks, BCE_loss, L1_loss, Gen_optimizer, Disc_A_optimizer, Disc_B_optimizer, train_hist)
-        # Test
-        testing(args, epoch, device, dataloaders, all_networks)
+        # # Test
+        # testing(args, epoch, device, dataloaders, all_networks)
 
     print('====================================================================================================')
     total_time = time.time() - start_time
