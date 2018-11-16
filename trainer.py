@@ -69,12 +69,16 @@ def dataloader_objects(args):
     B_back = ClothingDataset(args.img_size, 'B', 'back')
     B_side = ClothingDataset(args.img_size, 'B', 'side')
 
-    train_loader_A = utils.data_load(os.path.join('data', args.dataset), 'trainA', transform, args.batch_size, shuffle=True, drop_last=True)
-    train_loader_B = utils.data_load(os.path.join('data', args.dataset), 'trainB', transform, args.batch_size, shuffle=True, drop_last=True)
-    test_loader_A = utils.data_load(os.path.join('data', args.dataset), 'testA', transform, 1, shuffle=True, drop_last=True)
-    test_loader_B = utils.data_load(os.path.join('data', args.dataset), 'testB', transform, 1, shuffle=True, drop_last=True)
+    A_front_loader = DataLoader(dataset=A_front, batch_size=args.batch_size, shuffle=True)
+    A_back_loader = DataLoader(dataset=A_back, batch_size=args.batch_size, shuffle=True)
+    A_side_loader = DataLoader(dataset=A_side, batch_size=args.batch_size, shuffle=True)
 
-    dataloaders = [train_loader_A, train_loader_B, test_loader_A, test_loader_B]
+    B_front_loader = DataLoader(dataset=ABfront, batch_size=args.batch_size, shuffle=True)
+    B_back_loader = DataLoader(dataset=B_back, batch_size=args.batch_size, shuffle=True)
+    B_side_loader = DataLoader(dataset=B_side, batch_size=args.batch_size, shuffle=True)
+
+    
+    dataloaders = [A_front_loader, A_back_loader, A_side_loader, B_front_loader, B_back_loader, B_side_loader]
     return dataloaders
 
 
@@ -114,7 +118,7 @@ def setup():
 
 def training(args, epoch, device, dataloaders, all_networks, BCE_loss, L1_loss, Gen_optimizer, Disc_A_optimizer, Disc_B_optimizer, train_hist):
     En_A, En_B, De_A, De_B, Disc_A, Disc_B = all_networks
-    train_loader_A, train_loader_B, _, _ = dataloaders
+    A_front_loader, A_back_loader, A_side_loader, B_front_loader, B_back_loader, B_side_loader = dataloaders
 
     En_A.train()
     En_B.train()
@@ -132,7 +136,8 @@ def training(args, epoch, device, dataloaders, all_networks, BCE_loss, L1_loss, 
 
     epoch_start_time = time.time()
 
-    for (A, _), (B, _) in zip(train_loader_A, train_loader_B):
+    for A_front, B_front in zip(A_front_loader, B_front_loader):
+
         A, B = A.to(device), B.to(device)
 
         # train Disc_A & Disc_B
