@@ -165,7 +165,7 @@ def training(args, epoch, device, dataloaders, all_networks, BCE_loss, L1_loss, 
         # Disc fake loss
         in_A, sp_A = En_A(A)
         in_B, sp_B = En_B(B)
-
+      
         # De_A == B2A decoder, De_B == A2B decoder
         B2A = De_A(in_B + sp_A)
         A2B = De_B(in_A + sp_B)
