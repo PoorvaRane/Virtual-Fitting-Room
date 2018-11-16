@@ -75,13 +75,13 @@ def dataloader_objects(args):
     B_back = ClothingDataset(args.img_size, 'B', 'back')
     B_side = ClothingDataset(args.img_size, 'B', 'side')
 
-    A_front_loader = DataLoader(dataset=A_front, batch_size=args.batch_size, shuffle=True)
-    A_back_loader = DataLoader(dataset=A_back, batch_size=args.batch_size, shuffle=True)
-    A_side_loader = DataLoader(dataset=A_side, batch_size=args.batch_size, shuffle=True)
+    A_front_loader = DataLoader(dataset=A_front, batch_size=args.batch_size, shuffle=True, drop_last=True)
+    A_back_loader = DataLoader(dataset=A_back, batch_size=args.batch_size, shuffle=True, drop_last=True)
+    A_side_loader = DataLoader(dataset=A_side, batch_size=args.batch_size, shuffle=True, drop_last=True)
 
-    B_front_loader = DataLoader(dataset=B_front, batch_size=args.batch_size, shuffle=True)
-    B_back_loader = DataLoader(dataset=B_back, batch_size=args.batch_size, shuffle=True)
-    B_side_loader = DataLoader(dataset=B_side, batch_size=args.batch_size, shuffle=True)
+    B_front_loader = DataLoader(dataset=B_front, batch_size=args.batch_size, shuffle=True, drop_last=True)
+    B_back_loader = DataLoader(dataset=B_back, batch_size=args.batch_size, shuffle=True, drop_last=True)
+    B_side_loader = DataLoader(dataset=B_side, batch_size=args.batch_size, shuffle=True, drop_last=True)
 
     
     dataloaders = [A_front_loader, A_back_loader, A_side_loader, B_front_loader, B_back_loader, B_side_loader]
@@ -105,6 +105,14 @@ def initialize_networks(args, device):
     utils.print_network(Disc_A)
     utils.print_network(Disc_B)
     print('-----------------------------------------------')
+
+    # Parallelize code
+    En_A = nn.DataParallel(En_A)
+    En_B = nn.DataParallel(En_B)
+    De_A = nn.DataParallel(De_A)
+    De_B = nn.DataParallel(De_B)
+    Disc_A = nn.DataParallel(Disc_A)
+    Disc_B = nn.DataParallel(Disc_B)
 
     all_networks = [En_A, En_B, De_A, De_B, Disc_A, Disc_B]
     return all_networks
