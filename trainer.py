@@ -25,7 +25,7 @@ def parse_arguments():
     parser.add_argument('--ndf', type=int, default=64)
     parser.add_argument('--nb', type=int, default=8, help='the number of resnet block layers for generator')
     parser.add_argument('--img_size', type=int, default=64, help='input image size')
-    parser.add_argument('--num_epoch', type=int, default=100)
+    parser.add_argument('--num_epoch', type=int, default=300)
     parser.add_argument('--lrD', type=float, default=0.0001, help='learning rate, default=0.0001')
     parser.add_argument('--lrG', type=float, default=0.0001, help='learning rate, default=0.0001')
     parser.add_argument('--beta1', type=float, default=0.5, help='beta1 for Adam optimizer')
@@ -228,7 +228,10 @@ def training(args, epoch, device, dataloaders, all_networks, BCE_loss, L1_loss, 
     # Save Images
     imgs_save = [A, B, A2B, B2A]
     image_dir = os.path.join(args.dataset + '_results', 'img')
-    save_image(imgs_save, image_dir + '/epoch_%d_batch_%d.png' % (epoch, i), nrow=2, normalize=True)
+    #save_image(imgs_save, image_dir + '/epoch_%d.png' % (epoch), nrow=2, normalize=True)
+    result = torch.cat((A[0], B[0], A2B[0], B2A[0]), 2)
+    path = os.path.join(args.dataset + '_results', 'img', str(epoch+1) + '_epoch.png')
+    plt.imsave(path, (result.detach().cpu().numpy().transpose(1, 2, 0) + 1) / 2)
 
     return train_hist
 
