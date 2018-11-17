@@ -1,4 +1,4 @@
-import os, time, pickle, argparse, networks, utils, itertools
+import os, time, pickle, argparse, models, utils, itertools
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -89,16 +89,16 @@ def dataloader_objects(args):
     return dataloaders
 
 
-def initialize_networks(args, device):
+def initialize_models(args, device):
     # network
-    En_A = networks.encoder(in_nc=args.in_ngc, nf=args.ngf, img_size=args.img_size).to(device)
-    En_B = networks.encoder(in_nc=args.in_ngc, nf=args.ngf, img_size=args.img_size).to(device)
-    De_A = networks.decoder(out_nc=args.out_ngc, nf=args.ngf).to(device)
-    De_B = networks.decoder(out_nc=args.out_ngc, nf=args.ngf).to(device)
-    Disc_A = networks.discriminator(in_nc=args.in_ndc, out_nc=args.out_ndc, nf=args.ndf, img_size=args.img_size).to(device)
-    Disc_B = networks.discriminator(in_nc=args.in_ndc, out_nc=args.out_ndc, nf=args.ndf, img_size=args.img_size).to(device)
+    En_A = models.encoder(in_nc=args.in_ngc, nf=args.ngf, img_size=args.img_size).to(device)
+    En_B = models.encoder(in_nc=args.in_ngc, nf=args.ngf, img_size=args.img_size).to(device)
+    De_A = models.decoder(out_nc=args.out_ngc, nf=args.ngf).to(device)
+    De_B = models.decoder(out_nc=args.out_ngc, nf=args.ngf).to(device)
+    Disc_A = models.discriminator(in_nc=args.in_ndc, out_nc=args.out_ndc, nf=args.ndf, img_size=args.img_size).to(device)
+    Disc_B = models.discriminator(in_nc=args.in_ndc, out_nc=args.out_ndc, nf=args.ndf, img_size=args.img_size).to(device)
 
-    print('---------- Networks initialized -------------')
+    print('---------- models initialized -------------')
     utils.print_network(En_A)
     utils.print_network(En_B)
     utils.print_network(De_A)
@@ -115,8 +115,8 @@ def initialize_networks(args, device):
     Disc_A = nn.DataParallel(Disc_A)
     Disc_B = nn.DataParallel(Disc_B)
 
-    all_networks = [En_A, En_B, De_A, De_B, Disc_A, Disc_B]
-    return all_networks
+    all_models = [En_A, En_B, De_A, De_B, Disc_A, Disc_B]
+    return all_models
 
 
 def setup():
@@ -131,8 +131,8 @@ def setup():
     return train_hist
 
 
-def training(args, epoch, device, dataloaders, all_networks, BCE_loss, L1_loss, Gen_optimizer, Disc_A_optimizer, Disc_B_optimizer, train_hist):
-    En_A, En_B, De_A, De_B, Disc_A, Disc_B = all_networks
+def training(args, epoch, device, dataloaders, all_models, BCE_loss, L1_loss, Gen_optimizer, Disc_A_optimizer, Disc_B_optimizer, train_hist):
+    En_A, En_B, De_A, De_B, Disc_A, Disc_B = all_models
     A_front_loader, A_back_loader, A_side_loader, B_front_loader, B_back_loader, B_side_loader = dataloaders
 
     En_A.train()
@@ -226,6 +226,7 @@ def training(args, epoch, device, dataloaders, all_networks, BCE_loss, L1_loss, 
             torch.mean(torch.FloatTensor(Disc_B_losses)), torch.mean(torch.FloatTensor(Gen_losses)),))
 
     # Save Images
+    pdb.set_trace()
     imgs_save = [A, B, A2B, B2A]
     image_dir = os.path.join(args.dataset + '_results', 'img')
     #save_image(imgs_save, image_dir + '/epoch_%d.png' % (epoch), nrow=2, normalize=True)
@@ -234,54 +235,6 @@ def training(args, epoch, device, dataloaders, all_networks, BCE_loss, L1_loss, 
     plt.imsave(path, (result.detach().cpu().numpy().transpose(1, 2, 0) + 1) / 2)
 
     return train_hist
-
-
-def testing(args, epoch, device, dataloaders, all_networks):
-    En_A, En_B, De_A, De_B, Disc_A, Disc_B = all_networks
-    _, _, test_loader_A, test_loader_B = dataloaders
-
-    En_A.eval()
-    En_B.eval()
-    De_A.eval()
-    De_B.eval()
-    Disc_A.eval()
-    Disc_B.eval()
-    n = 0
-
-    for (A, _), (B, _) in zip(test_loader_A, test_loader_B):
-        A, B = A.to(device), B.to(device)
-
-        in_A, sp_A = En_A(A)
-        in_B, sp_B = En_B(B)
-
-        B2A = De_A(in_B + sp_A)
-        A2B = De_B(in_A + sp_B)
-
-        result = torch.cat((A[0], B[0], A2B[0], B2A[0]), 2)
-        path = os.path.join(args.dataset + '_results', 'img', str(epoch+1) + '_epoch_' + args.dataset + '_' + str(n + 1) + '.png')
-        plt.imsave(path, (result.detach().cpu().numpy().transpose(1, 2, 0) + 1) / 2)
-        n += 1
-
-        torch.save(En_A.state_dict(), os.path.join(args.dataset + '_results', 'model', 'En_A_param_latest.pkl'))
-        torch.save(En_B.state_dict(), os.path.join(args.dataset + '_results', 'model', 'En_B_param_latest.pkl'))
-        torch.save(De_A.state_dict(), os.path.join(args.dataset + '_results', 'model', 'De_A_param_latest.pkl'))
-        torch.save(De_B.state_dict(), os.path.join(args.dataset + '_results', 'model', 'De_B_param_latest.pkl'))
-        torch.save(Disc_A.state_dict(), os.path.join(args.dataset + '_results', 'model', 'Disc_A_param_latest.pkl'))
-        torch.save(Disc_B.state_dict(), os.path.join(args.dataset + '_results', 'model', 'Disc_B_param_latest.pkl'))
-
-        if (epoch+1) % 50 == 0:
-            torch.save(En_A.state_dict(),
-                       os.path.join(args.dataset + '_results', 'model', 'En_A_param_' + str(epoch+1) + '.pkl'))
-            torch.save(En_B.state_dict(),
-                       os.path.join(args.dataset + '_results', 'model', 'En_B_param_' + str(epoch+1) + '.pkl'))
-            torch.save(De_A.state_dict(),
-                       os.path.join(args.dataset + '_results', 'model', 'De_A_param_' + str(epoch+1) + '.pkl'))
-            torch.save(De_B.state_dict(),
-                       os.path.join(args.dataset + '_results', 'model', 'De_B_param_' + str(epoch+1) + '.pkl'))
-            torch.save(Disc_A.state_dict(),
-                       os.path.join(args.dataset + '_results', 'model', 'Disc_A_param_' + str(epoch+1) + '.pkl'))
-            torch.save(Disc_B.state_dict(),
-                       os.path.join(args.dataset + '_results', 'model', 'Disc_B_param_' + str(epoch+1) + '.pkl'))
 
 
 def main():
@@ -300,9 +253,9 @@ def main():
     # Get train and test dataloader objects
     dataloaders = dataloader_objects(args)
 
-    # initialize networks
-    all_networks = initialize_networks(args, device)
-    En_A, En_B, De_A, De_B, Disc_A, Disc_B = all_networks
+    # initialize models
+    all_models = initialize_models(args, device)
+    En_A, En_B, De_A, De_B, Disc_A, Disc_B = all_models
 
     # loss
     BCE_loss = nn.BCELoss().to(device)
@@ -324,9 +277,7 @@ def main():
         epoch_start_time = time.time()
 
         # Train
-        train_hist = training(args, epoch, device, dataloaders, all_networks, BCE_loss, L1_loss, Gen_optimizer, Disc_A_optimizer, Disc_B_optimizer, train_hist)
-        # # Test
-        # testing(args, epoch, device, dataloaders, all_networks)
+        train_hist = training(args, epoch, device, dataloaders, all_models, BCE_loss, L1_loss, Gen_optimizer, Disc_A_optimizer, Disc_B_optimizer, train_hist)
 
     print('====================================================================================================')
     total_time = time.time() - start_time
