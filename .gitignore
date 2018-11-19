@@ -2,4 +2,5 @@
 dataset_results/
 dataset/
 *.txt
+image_paths/
 
