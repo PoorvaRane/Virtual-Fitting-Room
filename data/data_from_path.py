@@ -6,7 +6,7 @@ import numpy as np
 
 
 def create_dataset(domain_file_list):
-	file_paths_dir = os.path.join(os.getcwd(), image_paths)
+	file_paths_dir = os.path.join(os.getcwd(), 'image_paths')
 	all_images = []
 
 	# Iterate over each file in domain_file_list
