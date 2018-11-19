@@ -41,8 +41,8 @@ def main():
 	A_image_list = create_dataset(domain_A)
 	B_image_list = create_dataset(domain_B)
 
-	save_dataset(A_image_list)
-	save_dataset(B_image_list)
+	save_dataset(A_image_list, 'A')
+	save_dataset(B_image_list, 'B')
 
 
 
