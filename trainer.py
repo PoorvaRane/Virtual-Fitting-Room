@@ -226,7 +226,6 @@ def training(args, epoch, device, dataloaders, all_models, BCE_loss, L1_loss, Ge
             torch.mean(torch.FloatTensor(Disc_B_losses)), torch.mean(torch.FloatTensor(Gen_losses)),))
 
     # Save Images
-    pdb.set_trace()
     imgs_save = [A, B, A2B, B2A]
     image_dir = os.path.join(args.dataset + '_results', 'img')
     #save_image(imgs_save, image_dir + '/epoch_%d.png' % (epoch), nrow=2, normalize=True)
