@@ -121,9 +121,15 @@ def initialize_models(args, device):
 
 def setup():
     train_hist = {}
-    train_hist['Disc_A_loss'] = []
-    train_hist['Disc_B_loss'] = []
-    train_hist['Gen_loss'] = []
+    train_hist['Disc_A_front_loss'] = []
+    train_hist['Disc_A_back_loss'] = []
+    train_hist['Disc_A_side_loss'] = []
+    train_hist['Disc_B_front_loss'] = []
+    train_hist['Disc_B_back_loss'] = []
+    train_hist['Disc_B_side_loss'] = []
+    train_hist['Gen_front_loss'] = []
+    train_hist['Gen_back_loss'] = []
+    train_hist['Gen_side_loss'] = []
     train_hist['per_epoch_time'] = []
     train_hist['total_time'] = []
 
@@ -198,6 +204,14 @@ def loader_epoch(A_loader, B_loader, device, En_A, En_B, De_A, De_B, Disc_A, Dis
 
         train_hist['Gen_' + angle + '_loss'].append(Gen_loss.item())
         Gen_losses.append(Gen_loss.item())
+
+    # Save Images
+    imgs_save = [A, B, A2B, B2A]
+    image_dir = os.path.join(args.dataset + '_results', 'img')
+    #save_image(imgs_save, image_dir + '/epoch_%d.png' % (epoch), nrow=2, normalize=True)
+    result = torch.cat((A[0], B[0], A2B[0], B2A[0]), 2)
+    path = os.path.join(args.dataset + '_results', 'img', str(epoch+1) + '_'+ angle +'_epoch.png')
+    plt.imsave(path, (result.detach().cpu().numpy().transpose(1, 2, 0) + 1) / 2)
 
     return Disc_A_losses, Disc_B_losses, Gen_losses, train_hist
 
