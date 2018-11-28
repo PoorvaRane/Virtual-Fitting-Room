@@ -137,7 +137,7 @@ def setup():
     return train_hist
 
 
-def loader_epoch(A_loader, B_loader, device, En_A, En_B, De_A, De_B, Disc_A, Disc_B, real, fake, Disc_A_optimizer, Disc_B_optimizer, BCE_loss, train_hist, Disc_A_losses, Disc_B_losses, Gen_losses, angle):
+def loader_epoch(A_loader, B_loader, device, En_A, En_B, De_A, De_B, Disc_A, Disc_B, real, fake, Disc_A_optimizer, Disc_B_optimizer, BCE_loss, L1_loss, train_hist, Disc_A_losses, Disc_B_losses, Gen_losses, angle):
 
     for A, B in zip(A_loader, B_loader):
         A, B = A.to(device), B.to(device)
@@ -237,13 +237,13 @@ def training(args, epoch, device, dataloaders, all_models, BCE_loss, L1_loss, Ge
     epoch_start_time = time.time()
 
     # Front loaders
-    Disc_A_losses, Disc_B_losses, Gen_losses, train_hist = loader_epoch(A_front_loader, B_front_loader, device, En_A, En_B, De_A, De_B, Disc_A, Disc_B, real, fake, Disc_A_optimizer, Disc_B_optimizer, BCE_loss, train_hist, Disc_A_losses, Disc_B_losses, Gen_losses, 'front')
+    Disc_A_losses, Disc_B_losses, Gen_losses, train_hist = loader_epoch(A_front_loader, B_front_loader, device, En_A, En_B, De_A, De_B, Disc_A, Disc_B, real, fake, Disc_A_optimizer, Disc_B_optimizer, BCE_loss, L1_loss, train_hist, Disc_A_losses, Disc_B_losses, Gen_losses, 'front')
 
     # Back loaders
-    Disc_A_losses, Disc_B_losses, Gen_losses, train_hist = loader_epoch(A_back_loader, B_back_loader, device, En_A, En_B, De_A, De_B, Disc_A, Disc_B, real, fake, Disc_A_optimizer, Disc_B_optimizer, BCE_loss, train_hist, Disc_A_losses, Disc_B_losses, Gen_losses, 'back')
+    Disc_A_losses, Disc_B_losses, Gen_losses, train_hist = loader_epoch(A_back_loader, B_back_loader, device, En_A, En_B, De_A, De_B, Disc_A, Disc_B, real, fake, Disc_A_optimizer, Disc_B_optimizer, BCE_loss, L1_loss, train_hist, Disc_A_losses, Disc_B_losses, Gen_losses, 'back')
 
     # Side loaders
-    Disc_A_losses, Disc_B_losses, Gen_losses, train_hist = loader_epoch(A_side_loader, B_side_loader, device, En_A, En_B, De_A, De_B, Disc_A, Disc_B, real, fake, Disc_A_optimizer, Disc_B_optimizer, BCE_loss, train_hist, Disc_A_losses, Disc_B_losses, Gen_losses, 'side')
+    Disc_A_losses, Disc_B_losses, Gen_losses, train_hist = loader_epoch(A_side_loader, B_side_loader, device, En_A, En_B, De_A, De_B, Disc_A, Disc_B, real, fake, Disc_A_optimizer, Disc_B_optimizer, BCE_loss, L1_loss, train_hist, Disc_A_losses, Disc_B_losses, Gen_losses, 'side')
 
     per_epoch_time = time.time() - epoch_start_time
     train_hist['per_epoch_time'].append(per_epoch_time)
