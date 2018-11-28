@@ -131,29 +131,10 @@ def setup():
     return train_hist
 
 
-def training(args, epoch, device, dataloaders, all_models, BCE_loss, L1_loss, Gen_optimizer, Disc_A_optimizer, Disc_B_optimizer, train_hist):
-    En_A, En_B, De_A, De_B, Disc_A, Disc_B = all_models
-    A_front_loader, A_back_loader, A_side_loader, B_front_loader, B_back_loader, B_side_loader = dataloaders
+def loader_epoch(A_loader, B_loader, device, En_A, En_B, De_A, De_B, Disc_A, Disc_B, real, fake, Disc_A_optimizer, Disc_B_optimizer, BCE_loss, train_hist, Disc_A_losses, Disc_B_losses, Gen_losses, angle):
 
-    En_A.train()
-    En_B.train()
-    De_A.train()
-    De_B.train()
-    Disc_A.train()
-    Disc_B.train()
-
-    real = torch.ones(args.batch_size, 1, 1, 1).to(device)
-    fake = torch.zeros(args.batch_size, 1, 1, 1).to(device)
-    
-    Disc_A_losses = []
-    Disc_B_losses = []
-    Gen_losses = []
-
-    epoch_start_time = time.time()
-
-    for A_front, B_front in zip(A_front_loader, B_front_loader):
-
-        A, B = A_front.to(device), B_front.to(device)
+    for A, B in zip(A_loader, B_loader):
+        A, B = A.to(device), B.to(device)
 
         # train Disc_A & Disc_B
         # Disc real loss
@@ -188,8 +169,8 @@ def training(args, epoch, device, dataloaders, all_models, BCE_loss, L1_loss, Ge
         Disc_B_loss.backward(retain_graph=True)
         Disc_B_optimizer.step()
 
-        train_hist['Disc_A_loss'].append(Disc_A_loss.item())
-        train_hist['Disc_B_loss'].append(Disc_B_loss.item())
+        train_hist['Disc_A_' + angle + '_loss'].append(Disc_A_loss.item())
+        train_hist['Disc_B_' + angle + '_loss'].append(Disc_B_loss.item())
         Disc_A_losses.append(Disc_A_loss.item())
         Disc_B_losses.append(Disc_B_loss.item())
 
@@ -215,8 +196,40 @@ def training(args, epoch, device, dataloaders, all_models, BCE_loss, L1_loss, Ge
         Gen_loss.backward()
         Gen_optimizer.step()
 
-        train_hist['Gen_loss'].append(Gen_loss.item())
+        train_hist['Gen_' + angle + '_loss'].append(Gen_loss.item())
         Gen_losses.append(Gen_loss.item())
+
+    return Disc_A_losses, Disc_B_losses, Gen_losses, train_hist
+
+
+def training(args, epoch, device, dataloaders, all_models, BCE_loss, L1_loss, Gen_optimizer, Disc_A_optimizer, Disc_B_optimizer, train_hist):
+    En_A, En_B, De_A, De_B, Disc_A, Disc_B = all_models
+    A_front_loader, A_back_loader, A_side_loader, B_front_loader, B_back_loader, B_side_loader = dataloaders
+
+    En_A.train()
+    En_B.train()
+    De_A.train()
+    De_B.train()
+    Disc_A.train()
+    Disc_B.train()
+
+    real = torch.ones(args.batch_size, 1, 1, 1).to(device)
+    fake = torch.zeros(args.batch_size, 1, 1, 1).to(device)
+    
+    Disc_A_losses = []
+    Disc_B_losses = []
+    Gen_losses = []
+
+    epoch_start_time = time.time()
+
+    # Front loaders
+    Disc_A_losses, Disc_B_losses, Gen_losses, train_hist = loader_epoch(A_front_loader, B_front_loader, device, En_A, En_B, De_A, De_B, Disc_A, Disc_B, real, fake, Disc_A_optimizer, Disc_B_optimizer, BCE_loss, train_hist, Disc_A_losses, Disc_B_losses, Gen_losses, 'front')
+
+    # Back loaders
+    Disc_A_losses, Disc_B_losses, Gen_losses, train_hist = loader_epoch(A_back_loader, B_back_loader, device, En_A, En_B, De_A, De_B, Disc_A, Disc_B, real, fake, Disc_A_optimizer, Disc_B_optimizer, BCE_loss, train_hist, Disc_A_losses, Disc_B_losses, Gen_losses, 'back')
+
+    # Side loaders
+    Disc_A_losses, Disc_B_losses, Gen_losses, train_hist = loader_epoch(A_side_loader, B_side_loader, device, En_A, En_B, De_A, De_B, Disc_A, Disc_B, real, fake, Disc_A_optimizer, Disc_B_optimizer, BCE_loss, train_hist, Disc_A_losses, Disc_B_losses, Gen_losses, 'side')
 
     per_epoch_time = time.time() - epoch_start_time
     train_hist['per_epoch_time'].append(per_epoch_time)
